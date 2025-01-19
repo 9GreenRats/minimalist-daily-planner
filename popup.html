@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Planner</title>
+</head>
+<body style="width: 360px; height: 600px; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px;">
+    <div id="app" style="height: 100%; display: flex; flex-direction: column; gap: 24px;">
+        <!-- Theme Toggle and Date Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button class="theme-toggle" id="theme-toggle" title="Toggles light & dark" aria-label="auto" aria-live="polite">
+              <svg class="sun-and-moon" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
+                <mask class="moon" id="moon-mask">
+                  <rect x="0" y="0" width="100%" height="100%" fill="white" />
+                  <circle cx="24" cy="10" r="6" fill="black" />
+                </mask>
+                <circle class="sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
+                <g class="sun-beams" stroke="currentColor">
+                  <line x1="12" y1="1" x2="12" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" />
+                  <line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </g>
+              </svg>
+            </button>
+            <h1 id="date" style="font-size: 24px; font-weight: 500; margin: 0;"></h1>
+        </div>
+
+        <!-- Tabs -->
+        <div id="tabs" style="display: flex; gap: 16px; padding: 4px; border-radius: 12px;">
+            <button id="tasks-tab" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">Tasks</button>
+            <button id="notes-tab" style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">Notes</button>
+        </div>
+
+        <!-- Content Area -->
+        <div id="content" style="flex: 1; overflow-y: auto; padding: 16px 16px 80px 16px;">
+            <ul id="tasks-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;"></ul>
+            <ul id="notes-list" style="list-style: none; padding: 0; margin: 0; display: none; flex-direction: column; gap: 8px;"></ul>
+        </div>
+
+        <!-- FAB -->
+        <button id="add-button" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: 56px; height: 56px; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; transition: all 0.3s ease;">+</button>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; padding: 24px; border-radius: 16px;">
+            <input type="text" id="modal-input" style="width: 100%; padding: 16px; margin-bottom: 16px; border: none; border-radius: 12px; font-size: 16px;">
+            <textarea id="note-input" style="display: none; width: 100%; height: 120px; padding: 16px; margin-bottom: 16px; border: none; border-radius: 12px; font-size: 15px; resize: none;"></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button id="cancel-button" style="padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Cancel</button>
+                <button id="save-button" style="padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        [data-theme="light"], [data-theme="dark"] {
+          --ease-3: cubic-bezier(0.25, 0, 0.3, 1);
+          --ease-out-5: cubic-bezier(0, 0, 0.5, 1);
+          --ease-elastic-3: cubic-bezier(0.5, 0.75, 0.75, 1.25);
+          --ease-elastic-4: cubic-bezier(0.5, 1, 0.75, 1.25);
+        }
+        [data-theme="light"] {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --shadow-color1: #d1d1d1;
+            --shadow-color2: #ffffff;
+            --modal-bg: rgba(240, 240, 240, 0.95);
+            --scrollbar-bg: #e0e0e0;
+            --scrollbar-thumb: #b0b0b0;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --shadow-color1: #0f0f0f;
+            --shadow-color2: #2a2a2a;
+            --modal-bg: rgba(26, 26, 26, 0.95);
+            --scrollbar-bg: #2a2a2a;
+            --scrollbar-thumb: #4a4a4a;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        #tabs {
+            background: var(--bg-color);
+            box-shadow: inset 2px 2px 5px var(--shadow-color1), 
+                       inset -2px -2px 5px var(--shadow-color2);
+        }
+
+        button {
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-shadow: 3px 3px 6px var(--shadow-color1), 
+                       -3px -3px 6px var(--shadow-color2);
+            transition: all 0.3s ease;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #add-button {
+            box-shadow: 5px 5px 10px var(--shadow-color1), 
+                       -5px -5px 10px var(--shadow-color2);
+        }
+
+        input, textarea {
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-shadow: inset 2px 2px 5px var(--shadow-color1), 
+                       inset -2px -2px 5px var(--shadow-color2);
+        }
+
+        #modal {
+            background: var(--modal-bg);
+        }
+
+        #modal > div {
+            background: var(--bg-color);
+            box-shadow: 5px 5px 10px var(--shadow-color1), 
+                       -5px -5px 10px var(--shadow-color2);
+        }
+
+        .task-item, li {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .task-item:hover, li:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 8px var(--shadow-color1), 
+                       -4px -4px 8px var(--shadow-color2);
+        }
+
+        .task-item {
+            text-align: center;
+            padding: 20px !important;
+            font-size: 18px !important;
+        }
+
+        .theme-toggle {
+          --size: 32px;
+          --icon-fill: var(--text-color);
+          --icon-fill-hover: var(--text-color);
+          background: none;
+          border: none;
+          padding: 0;
+          inline-size: var(--size);
+          block-size: var(--size);
+          aspect-ratio: 1;
+          border-radius: 50%;
+          cursor: pointer;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+          outline-offset: 5px;
+        }
+
+        .theme-toggle > svg {
+          inline-size: 100%;
+          block-size: 100%;
+          stroke-linecap: round;
+        }
+
+        .sun-and-moon > :is(.moon, .sun, .sun-beams) {
+          transform-origin: center center;
+        }
+
+        .sun-and-moon > :is(.moon, .sun) {
+          fill: var(--icon-fill);
+        }
+
+        .theme-toggle:is(:hover, :focus-visible) > .sun-and-moon > :is(.moon, .sun) {
+          fill: var(--icon-fill-hover);
+        }
+
+        .sun-and-moon > .sun-beams {
+          stroke: var(--icon-fill);
+          stroke-width: 2px;
+        }
+
+        .theme-toggle:is(:hover, :focus-visible) .sun-and-moon > .sun-beams {
+          stroke: var(--icon-fill-hover);
+        }
+
+        [data-theme="dark"] .sun-and-moon > .sun {
+          transform: scale(1.75);
+        }
+
+        [data-theme="dark"] .sun-and-moon > .sun-beams {
+          opacity: 0;
+        }
+
+        [data-theme="dark"] .sun-and-moon > .moon > circle {
+          transform: translateX(-7px);
+        }
+
+        @supports (cx: 1) {
+          [data-theme="dark"] .sun-and-moon > .moon > circle {
+            cx: 17;
+            transform: translateX(0);
+          }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .sun-and-moon > .sun {
+            transition: transform 0.5s var(--ease-elastic-3);
+          }
+
+          .sun-and-moon > .sun-beams {
+            transition: transform 0.5s var(--ease-elastic-4), opacity 0.5s var(--ease-3);
+          }
+
+          .sun-and-moon .moon > circle {
+            transition: transform 0.25s var(--ease-out-5);
+          }
+
+          @supports (cx: 1) {
+            .sun-and-moon .moon > circle {
+              transition: cx 0.25s var(--ease-out-5);
+            }
+          }
+
+          [data-theme="dark"] .sun-and-moon > .sun {
+            transform: scale(1.75);
+            transition-timing-function: var(--ease-3);
+            transition-duration: 0.25s;
+          }
+
+          [data-theme="dark"] .sun-and-moon > .sun-beams {
+            transform: rotateZ(-25deg);
+            transition-duration: 0.15s;
+          }
+
+          [data-theme="dark"] .sun-and-moon > .moon > circle {
+            transition-delay: 0.25s;
+            transition-duration: 0.5s;
+          }
+        }
+
+        /* Custom scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-bg);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-color);
+        }
+
+        /* For Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        #content::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        #content {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+    <script src="popup.js"></script>
+</body>
+</html>
+

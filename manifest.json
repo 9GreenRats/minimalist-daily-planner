@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Minimalist Daily Planner",
+  "version": "1.3",
+  "author": "9GreenRats",
+  "description": "A high-fidelity Chrome extension for daily planning with a minimalist design approach.",
+  "permissions": ["storage", "alarms", "notifications"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+
