@@ -96,8 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
   
         const li = document.createElement("li")
-        li.style.padding = "2px 8px"
-        li.style.minHeight = "16px"
+        li.style.padding = "1px 8px"
+        li.style.minHeight = "auto"
         li.style.display = "flex"
         li.style.flexDirection = "row"
         li.style.alignItems = "center"
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setContentHeight()
   
       if (state.currentView === "tasks") {
-        elements.tasksList.style.padding = "2px 8px"
+        elements.tasksList.style.padding = "1px 8px"
         elements.tasksList.style.display = "flex"
         elements.tasksList.style.flexDirection = "column"
         elements.tasksList.style.gap = "0"
@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function renderTaskItem(li, item, index) {
-      li.style.padding = "2px 8px"
-      li.style.minHeight = "16px"
+      li.style.padding = "1px 8px"
+      li.style.minHeight = "auto"
       li.style.marginBottom = "0"
       li.style.display = "flex"
       li.style.flexDirection = "row"
@@ -143,10 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const leftSection = document.createElement("div")
       leftSection.style.display = "flex"
       leftSection.style.flexDirection = "column"
-      leftSection.style.gap = "0px"
+      leftSection.style.gap = "0"
       leftSection.style.flex = "1"
       leftSection.style.minWidth = "0"
       leftSection.style.cursor = "pointer"
+      leftSection.style.padding = "2px 0"
   
       const title = document.createElement("div")
       title.textContent = item.text
@@ -156,15 +157,15 @@ document.addEventListener("DOMContentLoaded", () => {
       title.style.textDecoration = item.completed ? "line-through" : "none"
       title.style.whiteSpace = "normal"
       title.style.wordBreak = "break-word"
-      title.style.lineHeight = "1.1"
+      title.style.lineHeight = "1"
       title.style.textAlign = "left"
+      title.style.marginBottom = "1px"
   
       const dateLabel = document.createElement("div")
       dateLabel.textContent = formatDate(new Date(item.date))
       dateLabel.style.fontSize = "10px"
       dateLabel.style.color = "var(--text-color)"
       dateLabel.style.opacity = "0.6"
-      dateLabel.style.marginTop = "0"
       dateLabel.style.lineHeight = "1"
       dateLabel.style.textAlign = "left"
   
@@ -191,12 +192,16 @@ document.addEventListener("DOMContentLoaded", () => {
       actions.style.gap = "2px"
       actions.style.alignItems = "center"
   
-      const toggleBtn = createActionButton(item.completed ? "↩" : "✓", () => toggleTask(index))
-      const deleteBtn = createActionButton("×", () => deleteItem(index))
+      const toggleBtn = createActionButton(
+        item.completed ? "↩" : "✓", 
+        () => toggleTask(index),
+        item.completed ? "Mark Incomplete" : "Mark Complete"
+      )
+      const deleteBtn = createActionButton("×", () => deleteItem(index), "Delete")
   
       actions.appendChild(toggleBtn)
       if (!item.completed) {
-        const editBtn = createActionButton("✎", () => startEditing(index))
+        const editBtn = createActionButton("✎", () => startEditing(index), "Edit")
         actions.appendChild(editBtn)
       }
       actions.appendChild(deleteBtn)
@@ -293,8 +298,8 @@ document.addEventListener("DOMContentLoaded", () => {
       actions.style.opacity = "0"
       actions.style.transition = "opacity 0.2s ease"
   
-      const editBtn = createActionButton("✎", () => startEditing(index))
-      const deleteBtn = createActionButton("×", () => deleteItem(index))
+      const editBtn = createActionButton("✎", () => startEditing(index), "Edit Note")
+      const deleteBtn = createActionButton("×", () => deleteItem(index), "Delete Note")
       actions.appendChild(editBtn)
       actions.appendChild(deleteBtn)
   
@@ -372,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   
-    function createActionButton(text, onClick) {
+    function createActionButton(text, onClick, tooltip) {
       const button = document.createElement("button")
       button.textContent = text
       button.style.border = "none"
@@ -389,6 +394,41 @@ document.addEventListener("DOMContentLoaded", () => {
       button.style.display = "flex"
       button.style.justifyContent = "center"
       button.style.alignItems = "center"
+      button.style.position = "relative" // For tooltip positioning
+  
+      // Add tooltip
+      if (tooltip) {
+          button.title = tooltip // Native tooltip
+          
+          // Custom tooltip
+          const tooltipEl = document.createElement("div")
+          tooltipEl.textContent = tooltip
+          tooltipEl.style.position = "absolute"
+          tooltipEl.style.bottom = "100%"
+          tooltipEl.style.left = "50%"
+          tooltipEl.style.transform = "translateX(-50%)"
+          tooltipEl.style.padding = "4px 8px"
+          tooltipEl.style.borderRadius = "4px"
+          tooltipEl.style.fontSize = "10px"
+          tooltipEl.style.background = "var(--bg-color)"
+          tooltipEl.style.color = "var(--text-color)"
+          tooltipEl.style.whiteSpace = "nowrap"
+          tooltipEl.style.opacity = "0"
+          tooltipEl.style.pointerEvents = "none"
+          tooltipEl.style.transition = "opacity 0.2s ease"
+          tooltipEl.style.boxShadow = "1px 1px 3px var(--shadow-color1), -1px -1px 3px var(--shadow-color2)"
+          tooltipEl.style.marginBottom = "8px"
+          
+          button.appendChild(tooltipEl)
+          
+          button.addEventListener("mouseenter", () => {
+              tooltipEl.style.opacity = "1"
+          })
+          
+          button.addEventListener("mouseleave", () => {
+              tooltipEl.style.opacity = "0"
+          })
+      }
   
       button.addEventListener("click", (e) => {
         e.stopPropagation()
