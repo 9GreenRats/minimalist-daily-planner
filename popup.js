@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setInitialTabState()
       loadTheme()
       setContentHeight()
+      updateModalStyles()
     }
   
     function loadTheme() {
@@ -95,12 +96,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
   
         const li = document.createElement("li")
-        li.style.padding = "12px"
-        li.style.marginBottom = "8px"
-        li.style.borderRadius = "8px"
-        li.style.background = "var(--bg-color)"
-        li.style.boxShadow = "2px 2px 4px var(--shadow-color1), -2px -2px 4px var(--shadow-color2)"
-        li.style.transition = "all 0.3s ease"
+        li.style.padding = "2px 8px"
+        li.style.minHeight = "16px"
+        li.style.display = "flex"
+        li.style.flexDirection = "row"
+        li.style.alignItems = "center"
+        li.style.justifyContent = "space-between"
+        li.style.gap = "8px"
+        li.style.marginBottom = "0"
+        li.style.borderRadius = "0"
+        li.style.boxShadow = "none"
+        li.style.transition = "all 0.2s ease"
   
         if (state.currentView === "tasks") {
           li.classList.add("task-item")
@@ -112,30 +118,78 @@ document.addEventListener("DOMContentLoaded", () => {
         listElement.appendChild(li)
       })
       setContentHeight()
+  
+      if (state.currentView === "tasks") {
+        elements.tasksList.style.padding = "2px 8px"
+        elements.tasksList.style.display = "flex"
+        elements.tasksList.style.flexDirection = "column"
+        elements.tasksList.style.gap = "0"
+      }
     }
   
     function renderTaskItem(li, item, index) {
+      li.style.padding = "2px 8px"
+      li.style.minHeight = "16px"
+      li.style.marginBottom = "0"
+      li.style.display = "flex"
+      li.style.flexDirection = "row"
+      li.style.alignItems = "center"
+      li.style.justifyContent = "space-between"
+      li.style.gap = "8px"
+      li.style.borderRadius = "0"
+      li.style.boxShadow = "none"
+      li.style.transition = "all 0.2s ease"
+  
+      const leftSection = document.createElement("div")
+      leftSection.style.display = "flex"
+      leftSection.style.flexDirection = "column"
+      leftSection.style.gap = "0px"
+      leftSection.style.flex = "1"
+      leftSection.style.minWidth = "0"
+      leftSection.style.cursor = "pointer"
+  
       const title = document.createElement("div")
       title.textContent = item.text
-      title.style.fontSize = "16px"
+      title.style.fontSize = "13px"
       title.style.fontWeight = "500"
       title.style.color = item.completed ? "#999" : "var(--text-color)"
       title.style.textDecoration = item.completed ? "line-through" : "none"
-      title.style.marginBottom = "8px"
+      title.style.whiteSpace = "normal"
+      title.style.wordBreak = "break-word"
+      title.style.lineHeight = "1.1"
+      title.style.textAlign = "left"
   
       const dateLabel = document.createElement("div")
       dateLabel.textContent = formatDate(new Date(item.date))
-      dateLabel.style.fontSize = "12px"
+      dateLabel.style.fontSize = "10px"
       dateLabel.style.color = "var(--text-color)"
-      dateLabel.style.opacity = "0.7"
-      dateLabel.style.marginBottom = "8px"
+      dateLabel.style.opacity = "0.6"
+      dateLabel.style.marginTop = "0"
+      dateLabel.style.lineHeight = "1"
+      dateLabel.style.textAlign = "left"
+  
+      leftSection.appendChild(title)
+      leftSection.appendChild(dateLabel)
+  
+      const actionsContainer = document.createElement("div")
+      actionsContainer.style.position = "absolute"
+      actionsContainer.style.right = "-4px"
+      actionsContainer.style.top = "50%"
+      actionsContainer.style.transform = "translate(100%, -50%)"
+      actionsContainer.style.padding = "2px 4px"
+      actionsContainer.style.background = "var(--bg-color)"
+      actionsContainer.style.borderRadius = "4px"
+      actionsContainer.style.boxShadow = "1px 1px 3px var(--shadow-color1), -1px -1px 3px var(--shadow-color2)"
+      actionsContainer.style.display = "flex"
+      actionsContainer.style.gap = "2px"
+      actionsContainer.style.opacity = "0"
+      actionsContainer.style.transition = "all 0.2s ease"
+      actionsContainer.style.pointerEvents = "none"
   
       const actions = document.createElement("div")
       actions.style.display = "flex"
-      actions.style.justifyContent = "space-between"
+      actions.style.gap = "2px"
       actions.style.alignItems = "center"
-      actions.style.opacity = "0"
-      actions.style.transition = "opacity 0.2s ease"
   
       const toggleBtn = createActionButton(item.completed ? "↩" : "✓", () => toggleTask(index))
       const deleteBtn = createActionButton("×", () => deleteItem(index))
@@ -147,56 +201,96 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       actions.appendChild(deleteBtn)
   
-      li.appendChild(title)
-      li.appendChild(dateLabel)
-      li.appendChild(actions)
+      actionsContainer.appendChild(actions)
   
-      li.style.transform = "translateY(0)"
-      li.style.opacity = "1"
-      li.style.transition = "transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease"
+      const container = document.createElement("div")
+      container.style.position = "relative"
+      container.style.width = "100%"
+      container.style.display = "flex"
+      container.style.alignItems = "center"
+  
+      container.appendChild(leftSection)
+      container.appendChild(actionsContainer)
+      li.appendChild(container)
   
       li.addEventListener("mouseenter", () => {
-        li.style.transform = "translateY(-2px)"
-        li.style.boxShadow = "4px 4px 8px var(--shadow-color1), -4px -4px 8px var(--shadow-color2)"
-        actions.style.opacity = "1"
+        li.style.transform = "translateX(-16px)"
+        li.style.background = "var(--bg-color)"
+        actionsContainer.style.opacity = "1"
+        actionsContainer.style.transform = "translate(0, -50%)"
+        actionsContainer.style.pointerEvents = "auto"
       })
   
       li.addEventListener("mouseleave", () => {
-        li.style.transform = "translateY(0)"
-        li.style.boxShadow = "2px 2px 4px var(--shadow-color1), -2px -2px 4px var(--shadow-color2)"
-        actions.style.opacity = "0"
+        li.style.transform = "translateX(0)"
+        li.style.background = "none"
+        actionsContainer.style.opacity = "0"
+        actionsContainer.style.transform = "translate(100%, -50%)"
+        actionsContainer.style.pointerEvents = "none"
       })
     }
   
     function renderNoteItem(li, item, index) {
+      // Main container styles
+      li.style.padding = "12px 16px"
+      li.style.display = "flex"
+      li.style.flexDirection = "column"
+      li.style.gap = "4px"
+      li.style.background = "var(--bg-color)"
+      li.style.marginBottom = "12px"
+      li.style.cursor = "pointer"
+      li.style.borderRadius = "8px"
+      li.style.maxWidth = "320px" // Constrain width for better readability
+      li.style.margin = "0 auto 12px auto" // Center the note card
+      li.style.width = "100%"
+  
+      // Header section
+      const header = document.createElement("div")
+      header.style.display = "flex"
+      header.style.flexDirection = "column" // Stack title and meta vertically
+      header.style.gap = "4px"
+      header.style.width = "100%"
+  
+      // Title section with indicator
+      const titleSection = document.createElement("div")
+      titleSection.style.display = "flex"
+      titleSection.style.alignItems = "center"
+      titleSection.style.gap = "6px"
+      titleSection.style.width = "100%"
+  
       const lines = item.text.split("\n")
       const title = document.createElement("div")
       title.textContent = lines[0]
-      title.style.fontSize = "18px"
+      title.style.fontSize = "14px"
       title.style.fontWeight = "600"
-      title.style.marginBottom = "8px"
       title.style.color = "var(--text-color)"
+      title.style.lineHeight = "1.4"
+      title.style.flex = "1"
+  
+      const indicator = document.createElement("div")
+      indicator.textContent = "▼"
+      indicator.style.fontSize = "10px"
+      indicator.style.opacity = "0.6"
+      indicator.style.transition = "transform 0.3s ease"
+      indicator.style.transform = "rotate(-90deg)"
+  
+      // Meta section (date and actions)
+      const metaSection = document.createElement("div")
+      metaSection.style.display = "flex"
+      metaSection.style.justifyContent = "space-between"
+      metaSection.style.alignItems = "center"
+      metaSection.style.width = "100%"
   
       const dateLabel = document.createElement("div")
       dateLabel.textContent = formatDate(new Date(item.date))
-      dateLabel.style.fontSize = "12px"
+      dateLabel.style.fontSize = "11px"
       dateLabel.style.color = "var(--text-color)"
       dateLabel.style.opacity = "0.7"
-      dateLabel.style.marginBottom = "8px"
-  
-      const preview = document.createElement("div")
-      const previewText = lines.slice(1).join("\n")
-      preview.textContent = previewText.length > 100 ? previewText.substring(0, 100) + "..." : previewText
-      preview.style.fontSize = "16px"
-      preview.style.color = "var(--text-color)"
-      preview.style.opacity = "0.8"
   
       const actions = document.createElement("div")
-      actions.style.opacity = "0"
-      actions.style.marginTop = "12px"
       actions.style.display = "flex"
-      actions.style.justifyContent = "flex-start"
-      actions.style.gap = "12px"
+      actions.style.gap = "8px"
+      actions.style.opacity = "0"
       actions.style.transition = "opacity 0.2s ease"
   
       const editBtn = createActionButton("✎", () => startEditing(index))
@@ -204,13 +298,62 @@ document.addEventListener("DOMContentLoaded", () => {
       actions.appendChild(editBtn)
       actions.appendChild(deleteBtn)
   
-      li.appendChild(title)
-      li.appendChild(dateLabel)
-      li.appendChild(preview)
-      li.appendChild(actions)
+      // Content section
+      const contentSection = document.createElement("div")
+      contentSection.style.display = "none"
+      contentSection.style.marginTop = "8px"
+      const previewText = lines.slice(1).join("\n")
+      
+      if (previewText) {
+          const content = document.createElement("div")
+          content.textContent = previewText
+          content.style.fontSize = "13px"
+          content.style.color = "var(--text-color)"
+          content.style.opacity = "0.85"
+          content.style.lineHeight = "1.5"
+          content.style.whiteSpace = "pre-wrap"
+          content.style.wordBreak = "break-word"
+          content.style.borderTop = "1px solid rgba(var(--text-color-rgb), 0.1)"
+          content.style.paddingTop = "8px"
+          content.style.marginTop = "4px"
+          
+          contentSection.appendChild(content)
   
-      li.addEventListener("mouseenter", () => (actions.style.opacity = "1"))
-      li.addEventListener("mouseleave", () => (actions.style.opacity = "0"))
+          // Assemble the layout
+          titleSection.appendChild(title)
+          titleSection.appendChild(indicator)
+  
+          metaSection.appendChild(dateLabel)
+          metaSection.appendChild(actions)
+  
+          header.appendChild(titleSection)
+          header.appendChild(metaSection)
+  
+          li.appendChild(header)
+          li.appendChild(contentSection)
+  
+          // Click handler for expand/collapse
+          li.addEventListener("click", (e) => {
+              if (e.target.closest("button")) return
+              
+              const isVisible = contentSection.style.display === "block"
+              contentSection.style.display = isVisible ? "none" : "block"
+              indicator.style.transform = isVisible ? "rotate(-90deg)" : "rotate(0deg)"
+          })
+      }
+  
+      // Hover effects
+      li.addEventListener("mouseenter", () => {
+          li.style.transform = "translateY(-2px)"
+          li.style.boxShadow = "3px 3px 6px var(--shadow-color1), -3px -3px 6px var(--shadow-color2)"
+          actions.style.opacity = "1"
+      })
+  
+      li.addEventListener("mouseleave", () => {
+          li.style.transform = "translateY(0)"
+          li.style.boxShadow = "2px 2px 4px var(--shadow-color1), -2px -2px 4px var(--shadow-color2)"
+          actions.style.opacity = "0"
+      })
     }
   
     function formatDate(date) {
@@ -234,14 +377,14 @@ document.addEventListener("DOMContentLoaded", () => {
       button.textContent = text
       button.style.border = "none"
       button.style.background = "none"
-      button.style.padding = "4px"
+      button.style.padding = "2px"
       button.style.cursor = "pointer"
       button.style.color = "var(--text-color)"
       button.style.opacity = "0.7"
-      button.style.fontSize = "16px"
+      button.style.fontSize = "12px"
       button.style.transition = "all 0.2s ease"
-      button.style.width = "24px"
-      button.style.height = "24px"
+      button.style.width = "18px"
+      button.style.height = "18px"
       button.style.borderRadius = "50%"
       button.style.display = "flex"
       button.style.justifyContent = "center"
@@ -409,7 +552,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.modal.style.display = "block"
         elements.modalInput.focus()
   
-        // Show note input if in notes view
         if (state.currentView === "notes") {
           elements.noteInput.style.display = "block"
         }
@@ -444,8 +586,73 @@ document.addEventListener("DOMContentLoaded", () => {
       const tabsHeight = document.getElementById("tabs").offsetHeight
       const addButtonHeight = document.getElementById("add-button").offsetHeight
       const totalHeight = document.body.offsetHeight
-      const contentHeight = totalHeight - headerHeight - tabsHeight - addButtonHeight - 72 // 72 for padding
+      const contentHeight = totalHeight - headerHeight - tabsHeight - addButtonHeight - 72
       elements.content.style.height = `${contentHeight}px`
+    }
+  
+    function updateModalStyles() {
+      const modalInput = document.getElementById("modal-input")
+      const noteInput = document.getElementById("note-input")
+      const saveButton = document.getElementById("save-button")
+      const cancelButton = document.getElementById("cancel-button")
+  
+      const inputStyles = {
+        width: "100%",
+        padding: "12px 16px",
+        marginBottom: "16px",
+        border: "none",
+        borderRadius: "12px",
+        fontSize: "14px",
+        lineHeight: "1.5",
+        color: "var(--text-color)",
+        background: "var(--bg-color)",
+        boxShadow: "inset 2px 2px 5px var(--shadow-color1), inset -2px -2px 5px var(--shadow-color2)",
+        transition: "all 0.3s ease",
+        outline: "none"
+      }
+  
+      Object.assign(modalInput.style, inputStyles)
+      Object.assign(noteInput.style, {
+        ...inputStyles,
+        height: "120px",
+        resize: "none",
+        marginBottom: "16px",
+        fontSize: "13px"
+      })
+  
+      const buttonStyles = {
+        padding: "10px 20px",
+        border: "none",
+        borderRadius: "8px",
+        fontSize: "13px",
+        fontWeight: "500",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+        background: "var(--bg-color)",
+        color: "var(--text-color)",
+        boxShadow: "3px 3px 6px var(--shadow-color1), -3px -3px 6px var(--shadow-color2)"
+      }
+  
+      Object.assign(saveButton.style, buttonStyles, {
+        background: "var(--accent-color, var(--bg-color))"
+      })
+      Object.assign(cancelButton.style, buttonStyles)
+  
+      modalInput.addEventListener("focus", () => {
+        modalInput.style.boxShadow = "inset 3px 3px 7px var(--shadow-color1), inset -3px -3px 7px var(--shadow-color2)"
+      })
+  
+      noteInput.addEventListener("focus", () => {
+        noteInput.style.boxShadow = "inset 3px 3px 7px var(--shadow-color1), inset -3px -3px 7px var(--shadow-color2)"
+      })
+  
+      modalInput.addEventListener("blur", () => {
+        modalInput.style.boxShadow = "inset 2px 2px 5px var(--shadow-color1), inset -2px -2px 5px var(--shadow-color2)"
+      })
+  
+      noteInput.addEventListener("blur", () => {
+        noteInput.style.boxShadow = "inset 2px 2px 5px var(--shadow-color1), inset -2px -2px 5px var(--shadow-color2)"
+      })
     }
   
     init()
