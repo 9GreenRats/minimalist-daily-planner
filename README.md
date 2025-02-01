@@ -1,75 +1,114 @@
-# Minimalist Daily Planner Chrome Extension
+# Minimalist Daily Planner
 
-A high-fidelity Chrome extension for daily planning with a minimalist design approach, emphasizing clean aesthetics and efficient functionality.
+A high-fidelity Chrome extension for daily planning with a minimalist design approach.
 
 ## Features
 
-- Task Management
-  - Add, edit, and delete tasks
-  - Mark tasks as complete/incomplete
-  - Completed tasks move to the bottom of the list
-- Note Taking
-  - Add, edit, and delete notes
-- Clean, minimalist design with neumorphic UI elements
-- Dark/Light theme toggle
-- Persistent storage using Chrome's sync storage
-- Micro-interactions for improved user experience
-- Responsive layout
+### Task Management
+- Ultra-compact task list for maximum visibility
+- Quick-action buttons with tooltips (Complete, Edit, Delete)
+- Slide-out action menu for clean interface
+- Automatic date organization
+- Task completion tracking
+- Single-line task display with date indicator
+- Improved task spacing and readability
+
+### Notes System
+- Card-based notes with expandable preview
+- Rich text support with title and content sections
+- Centered layout for better readability
+- Smooth expand/collapse animations
+- Quick-action buttons with tooltips
+- Optimized note preview layout
+
+### Pomodoro Timer (Hidden Feature)
+- Full-screen immersive timer experience
+- Accessible via date header click
+- Clean, minimalist interface with large timer display
+- Default 30-minute work sessions
+- Persistent timer state across extension sessions
+- Visual and audio notifications
+- Smooth slide transitions
+- Simple controls (Start, Reset, Settings)
+- Automatic break/work cycle management
+- Settings with duration customization
+
+### Design & UX
+- Monochromatic theme (pure black & white)
+- Light/Dark theme support with smooth transitions
+- Custom scrollbar styling
+- Responsive layout (360x600)
+- Minimalist animations and transitions
+- Improved touch targets
+- Enhanced tooltips
+- Better visual feedback
+- Consistent spacing and typography
+
+## Technical Details
+- Built with vanilla JavaScript
+- Chrome Storage API for data persistence
+- Chrome Notifications API for reminders
+- State management and persistence
+- Error handling with fallbacks
+- No external dependencies
+
+## Recent Updates (v1.6.0)
+1. Redesigned Pomodoro timer with full-screen layout
+2. Improved task list spacing and readability
+3. Enhanced animations and transitions
+4. Better state persistence
+5. Simplified UI/UX flows
+6. Improved notifications system
+7. Cleaner monochromatic design
+8. Better error handling
+9. Enhanced settings modal
+10. Optimized storage usage
 
 ## Installation
-
-1. Clone this repository or download the ZIP file and extract it.
-2. Open Google Chrome and navigate to `chrome://extensions`.
-3. Enable "Developer mode" in the top right corner.
-4. Click "Load unpacked" and select the directory containing the extension files.
-5. The Minimalist Daily Planner extension should now appear in your Chrome toolbar.
+1. Download from Chrome Web Store
+2. Or load unpacked:
+   - Clone repository
+   - Open Chrome Extensions (chrome://extensions/)
+   - Enable Developer Mode
+   - Click "Load unpacked"
+   - Select extension directory
 
 ## Usage
+- Click extension icon to open
+- Switch between Tasks/Notes tabs
+- Add new items with + button
+- Hover over tasks to reveal actions
+- Click date text to access Pomodoro timer
+- Click theme toggle for light/dark mode
+- Timer continues running even when extension is closed
 
-1. Click on the extension icon in the Chrome toolbar to open the planner.
-2. Use the tabs at the top to switch between Tasks and Notes.
-3. To add a new task or note, click the "+" button at the bottom of the popup.
-4. For tasks:
-   - Enter the task text and press Enter or click Save.
-   - Click the checkmark button to mark a task as complete.
-   - Click the pencil icon to edit a task.
-   - Click the "x" button to delete a task.
-5. For notes:
-   - Enter the note title and content, then click Save.
-   - Click the pencil icon to edit a note.
-   - Click the "x" button to delete a note.
-6. Use the sun/moon icon in the top left to toggle between light and dark themes.
+## Upcoming Features
+- Task categories and filtering
+- Note search functionality
+- Export/Import data
+- Custom themes
+- Keyboard shortcuts
+- Task priorities
+- Recurring tasks
+- Statistics dashboard
 
-## Development
+## Version History
+### 1.5.0
+- Added Pomodoro timer with progress ring
+- Improved task and note layouts
+- Enhanced animations and interactions
+- Added persistent state management
+- Improved notifications system
 
-To modify or enhance the extension:
+### 1.4.0
+- Added tooltips
+- Improved task density
+- Enhanced note previews
+- Better error handling
 
-1. Make changes to the relevant files (popup.html, popup.js).
-2. If you're adding new features or modifying existing ones, update the `manifest.json` file if necessary.
-3. To test your changes:
-   - Go to `chrome://extensions/` in Chrome.
-   - Find the Minimalist Daily Planner extension.
-   - Click the "Reload" button for the extension.
-4. Your changes should now be reflected in the extension.
-
-### Project Structure
-
-- `manifest.json`: Extension configuration file
-- `popup.html`: Main HTML file for the extension popup
-- `popup.js`: JavaScript file containing the main functionality
-- `background.js`: Background script for handling alarms and notifications
-- `icon16.png`, `icon48.png`, `icon128.png`: Extension icons
-
-### Potential Improvements
-
-- Implement drag-and-drop functionality for reordering tasks
-- Add due dates and priority levels for tasks
-- Implement a search functionality for tasks and notes
-- Add categories or tags for better organization
-- Implement data export/import functionality
-- Add keyboard shortcuts for quick actions
+## Author
+9GreenRats
 
 ## License
-
-This project is licensed under the MIT License.
+MIT
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Minimalist Daily Planner",
-  "version": "1.5",
+  "version": "1.6",
   "author": "9GreenRats",
   "description": "A high-fidelity Chrome extension for daily planning with a minimalist design approach.",
   "permissions": ["storage", "alarms", "notifications"],

@@ -6,6 +6,17 @@ document.addEventListener("DOMContentLoaded", () => {
       currentDate: new Date(),
       editingItemIndex: null,
       theme: "light",
+      pomodoro: {
+          isVisible: false,
+          isRunning: false,
+          timeLeft: 30 * 60, // 30 minutes default
+          workDuration: 30 * 60,
+          breakDuration: 5 * 60,
+          isBreak: false,
+          lastStartTime: null,
+          lastPauseTime: null
+      },
+      showCompletedHistory: false
     }
   
     const elements = {
@@ -22,7 +33,31 @@ document.addEventListener("DOMContentLoaded", () => {
       cancelButton: document.getElementById("cancel-button"),
       themeToggle: document.getElementById("theme-toggle"),
       content: document.getElementById("content"),
+      pomodoroContainer: document.createElement("div"),
+      pomodoroTimer: document.createElement("div")
     }
+  
+    // Add these SVG icons at the top of the file
+    const playIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <polygon points="5,3 19,12 5,21" fill="currentColor"/>
+    </svg>`
+
+    const pauseIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="7" y="4" width="3" height="16" fill="currentColor"/>
+        <rect x="14" y="4" width="3" height="16" fill="currentColor"/>
+    </svg>`
+
+    const resetIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M4 12a8 8 0 018-8v2" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20 12a8 8 0 01-8 8v-2" stroke-width="2" stroke-linecap="round"/>
+    </svg>`
+
+    const settingsIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="3" stroke-width="2"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2"/>
+    </svg>`
+  
+    let saveTimeout = null
   
     function init() {
       updateDateDisplay()
@@ -33,6 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loadTheme()
       setContentHeight()
       updateModalStyles()
+      initPomodoroTimer()
+      updateFABPosition()
+      
+      window.addEventListener("resize", updateFABPosition)
     }
   
     function loadTheme() {
@@ -59,6 +98,25 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateDateDisplay() {
       const options = { weekday: "long", month: "long", day: "numeric" }
       elements.date.textContent = state.currentDate.toLocaleDateString("en-US", options)
+      
+      // Make date clickable for pomodoro
+      elements.date.style.cursor = "pointer"
+      elements.date.style.transition = "opacity 0.2s ease"
+      elements.date.title = "Click to open Pomodoro Timer"
+      
+      // Add hover effect
+      elements.date.addEventListener("mouseenter", () => {
+          elements.date.style.opacity = "0.7"
+      })
+      
+      elements.date.addEventListener("mouseleave", () => {
+          elements.date.style.opacity = "1"
+      })
+      
+      // Click to show pomodoro
+      elements.date.addEventListener("click", () => {
+          showPomodoro()
+      })
     }
   
     function setInitialTabState() {
@@ -91,22 +149,32 @@ document.addEventListener("DOMContentLoaded", () => {
       }
   
       currentItems.forEach((item, index) => {
-        if (state.currentView === "tasks" && item.completed && !isSameDay(new Date(item.date), state.currentDate)) {
-          return // Skip completed tasks that are not from today
+        if (state.currentView === "tasks") {
+          const isToday = isSameDay(new Date(item.date), state.currentDate)
+          if (item.completed && !isToday && !state.showCompletedHistory) {
+            return // Skip completed tasks from previous days unless history is shown
+          }
+
+          // Add completion date to completed tasks
+          if (item.completed) {
+            item.completedDate = item.completedDate || item.date // Store completion date
+          }
         }
   
         const li = document.createElement("li")
-        li.style.padding = "1px 8px"
-        li.style.minHeight = "auto"
-        li.style.display = "flex"
-        li.style.flexDirection = "row"
-        li.style.alignItems = "center"
-        li.style.justifyContent = "space-between"
-        li.style.gap = "8px"
-        li.style.marginBottom = "0"
-        li.style.borderRadius = "0"
-        li.style.boxShadow = "none"
-        li.style.transition = "all 0.2s ease"
+        li.style.cssText = `
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-radius: 8px;
+            background: var(--bg-color);
+            box-shadow: 3px 3px 6px var(--shadow-color1), -3px -3px 6px var(--shadow-color2);
+            transition: all 0.2s ease;
+            position: relative;
+        `
   
         if (state.currentView === "tasks") {
           li.classList.add("task-item")
@@ -128,17 +196,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function renderTaskItem(li, item, index) {
-      li.style.padding = "1px 8px"
-      li.style.minHeight = "auto"
-      li.style.marginBottom = "0"
-      li.style.display = "flex"
-      li.style.flexDirection = "row"
-      li.style.alignItems = "center"
-      li.style.justifyContent = "space-between"
-      li.style.gap = "8px"
-      li.style.borderRadius = "0"
-      li.style.boxShadow = "none"
-      li.style.transition = "all 0.2s ease"
+      // Restore original styling
+      li.style.cssText = `
+          padding: 16px;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          border-radius: 8px;
+          background: var(--bg-color);
+          box-shadow: 3px 3px 6px var(--shadow-color1), -3px -3px 6px var(--shadow-color2);
+          transition: all 0.2s ease;
+          position: relative;
+      `
   
       const leftSection = document.createElement("div")
       leftSection.style.display = "flex"
@@ -171,6 +242,14 @@ document.addEventListener("DOMContentLoaded", () => {
   
       leftSection.appendChild(title)
       leftSection.appendChild(dateLabel)
+  
+      if (state.currentView === "tasks" && item.completed && item.completedDate) {
+        const completedDateLabel = document.createElement("div")
+        completedDateLabel.textContent = `Completed: ${formatDate(new Date(item.completedDate))}`
+        completedDateLabel.style.fontSize = "10px"
+        completedDateLabel.style.opacity = "0.6"
+        leftSection.appendChild(completedDateLabel)
+      }
   
       const actionsContainer = document.createElement("div")
       actionsContainer.style.position = "absolute"
@@ -409,7 +488,6 @@ document.addEventListener("DOMContentLoaded", () => {
           tooltipEl.style.transform = "translateX(-50%)"
           tooltipEl.style.padding = "4px 8px"
           tooltipEl.style.borderRadius = "4px"
-          tooltipEl.style.fontSize = "10px"
           tooltipEl.style.background = "var(--bg-color)"
           tooltipEl.style.color = "var(--text-color)"
           tooltipEl.style.whiteSpace = "nowrap"
@@ -452,11 +530,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function toggleTask(index) {
-      if (index >= 0 && index < state.tasks.length) {
-        state.tasks[index].completed = !state.tasks[index].completed
+      const task = state.tasks[index]
+      task.completed = !task.completed
+      task.completedDate = task.completed ? new Date().toISOString() : null
         saveData()
         renderItems()
-      }
     }
   
     function startEditing(index) {
@@ -478,17 +556,39 @@ document.addEventListener("DOMContentLoaded", () => {
       elements.modalInput.focus()
     }
   
-    function saveItem() {
-      let text
-      if (state.currentView === "tasks") {
-        text = elements.modalInput.value.trim()
-      } else {
-        const title = elements.modalInput.value.trim()
-        const content = elements.noteInput.value.trim()
-        text = title + (content ? "\n" + content : "")
-      }
+    function showError(message) {
+        const errorDiv = document.createElement("div")
+        errorDiv.textContent = message
+        errorDiv.style.color = "#ff4444"
+        errorDiv.style.fontSize = "12px"
+        errorDiv.style.marginTop = "-12px"
+        errorDiv.style.marginBottom = "12px"
+        errorDiv.style.opacity = "0"
+        errorDiv.style.transition = "opacity 0.3s ease"
+
+        const modalContent = document.querySelector("#modal > div")
+        modalContent.insertBefore(errorDiv, document.querySelector("#modal button").parentElement)
+
+        requestAnimationFrame(() => errorDiv.style.opacity = "1")
+        setTimeout(() => {
+            errorDiv.style.opacity = "0"
+            setTimeout(() => errorDiv.remove(), 300)
+        }, 3000)
+    }
   
-      if (!text) return
+    function saveItem() {
+      const text = elements.modalInput.value.trim()
+      const noteText = elements.noteInput.value.trim()
+
+      if (state.currentView === "tasks" && !text) {
+          showError("Please enter a task description")
+          return
+      }
+
+      if (state.currentView === "notes" && (!text || !noteText)) {
+          showError("Please enter both title and content for the note")
+          return
+      }
   
       if (state.editingItemIndex !== null) {
         const currentItems = state.currentView === "tasks" ? state.tasks : state.notes
@@ -622,12 +722,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function setContentHeight() {
-      const headerHeight = document.querySelector("h1").offsetHeight
-      const tabsHeight = document.getElementById("tabs").offsetHeight
-      const addButtonHeight = document.getElementById("add-button").offsetHeight
-      const totalHeight = document.body.offsetHeight
-      const contentHeight = totalHeight - headerHeight - tabsHeight - addButtonHeight - 72
-      elements.content.style.height = `${contentHeight}px`
+      const contentPadding = 16
+      const contentBottomPadding = 80
+      const contentHeight = 600 - 48 - 52 - 56 - 72 // Total height - header - tabs - FAB - padding
+      
+      elements.content.style.cssText = `
+          height: ${contentHeight}px;
+          overflow-y: auto;
+          padding: ${contentPadding}px ${contentPadding}px ${contentBottomPadding}px ${contentPadding}px;
+          margin: 0;
+      `
     }
   
     function updateModalStyles() {
@@ -635,9 +739,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const noteInput = document.getElementById("note-input")
       const saveButton = document.getElementById("save-button")
       const cancelButton = document.getElementById("cancel-button")
-  
+      const modalContent = document.querySelector("#modal > div")
+
+      // Fix modal content width and positioning
+      modalContent.style.width = "calc(100% - 48px)" // Changed from 85%
+      modalContent.style.maxWidth = "312px"
+      modalContent.style.margin = "0 auto"
+
       const inputStyles = {
         width: "100%",
+        boxSizing: "border-box", // Add this to prevent overlap
         padding: "12px 16px",
         marginBottom: "16px",
         border: "none",
@@ -650,53 +761,493 @@ document.addEventListener("DOMContentLoaded", () => {
         transition: "all 0.3s ease",
         outline: "none"
       }
-  
+
       Object.assign(modalInput.style, inputStyles)
       Object.assign(noteInput.style, {
         ...inputStyles,
         height: "120px",
         resize: "none",
+        display: "none", // Ensure it's hidden by default
         marginBottom: "16px",
         fontSize: "13px"
       })
+    }
   
-      const buttonStyles = {
-        padding: "10px 20px",
-        border: "none",
-        borderRadius: "8px",
-        fontSize: "13px",
-        fontWeight: "500",
-        cursor: "pointer",
-        transition: "all 0.3s ease",
-        background: "var(--bg-color)",
-        color: "var(--text-color)",
-        boxShadow: "3px 3px 6px var(--shadow-color1), -3px -3px 6px var(--shadow-color2)"
-      }
+    function updateFABPosition() {
+      const addButton = document.getElementById("add-button")
+      if (!addButton) return
+
+      // Account for the body padding (24px on each side)
+      const bodyPadding = 24
+      const popupWidth = 360 // Fixed width of popup
+      const fabWidth = 56
+      
+      // Calculate the exact center position
+      const leftPosition = (popupWidth / 2) + bodyPadding - (fabWidth / 2)
+
+      addButton.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: ${leftPosition}px;
+        width: 56px;
+        height: 56px;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        background: var(--bg-color);
+        color: var(--text-color);
+        box-shadow: 5px 5px 10px var(--shadow-color1), -5px -5px 10px var(--shadow-color2);
+        transition: all 0.3s ease;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `
+    }
   
-      Object.assign(saveButton.style, buttonStyles, {
-        background: "var(--accent-color, var(--bg-color))"
-      })
-      Object.assign(cancelButton.style, buttonStyles)
+    function initPomodoroTimer() {
+        chrome.storage.sync.get(['pomodoroState'], (result) => {
+            if (result.pomodoroState) {
+                const savedState = result.pomodoroState
+                
+                // If timer was running, calculate correct remaining time
+                if (savedState.isRunning && savedState.lastStartTime) {
+                    const now = Date.now()
+                    const elapsed = Math.floor((now - savedState.lastStartTime) / 1000)
+                    const duration = savedState.isBreak ? 
+                        savedState.breakDuration : 
+                        savedState.workDuration
+                    
+                    savedState.timeLeft = Math.max(0, duration - elapsed)
+                    
+                    // If time's up, trigger completion
+                    if (savedState.timeLeft === 0) {
+                        state.pomodoro = { ...state.pomodoro, ...savedState }
+                        handleTimerComplete()
+                        return
+                    }
+                }
+                
+                state.pomodoro = { ...state.pomodoro, ...savedState }
+                
+                // Update UI
+                elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+                elements.pomodoroStatus.textContent = state.pomodoro.isBreak ? "Break" : "Focus"
+                
+                // If timer was running, hide start button and continue timer
+                if (state.pomodoro.isRunning) {
+                    elements.pomodoroStartButton.style.display = 'none'
+                    runTimer()
+                }
+            }
+        })
+
+        // Create container with full-tab styling
+        elements.pomodoroContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            transform: translateY(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            opacity: 0;
+        `
+
+        // Header with back button
+        const header = document.createElement("div")
+        header.style.cssText = `
+            width: 100%;
+            display: flex;
+            align-items: center;
+            margin-bottom: 48px;
+        `
+
+        const backButton = document.createElement("button")
+        backButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`
+        backButton.style.cssText = `
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+        `
+        backButton.onclick = hidePomodoro
+
+        const timerTitle = document.createElement("div")
+        timerTitle.textContent = "Pomodoro Timer"
+        timerTitle.style.cssText = `
+            flex: 1;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+            margin-right: 40px; // Compensate for back button
+        `
+
+        header.appendChild(backButton)
+        header.appendChild(timerTitle)
+
+        // Timer display
+        const timerContainer = document.createElement("div")
+        timerContainer.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 24px;
+        `
+
+        const statusLabel = document.createElement("div")
+        statusLabel.textContent = state.pomodoro.isBreak ? "Break" : "Focus"
+        statusLabel.style.cssText = `
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0.8;
+        `
+
+        elements.pomodoroTimer.style.cssText = `
+            font-size: 72px;
+            font-weight: 600;
+            font-family: 'SF Mono', 'Roboto Mono', monospace;
+            color: var(--text-color);
+            letter-spacing: 4px;
+        `
+        elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+
+        // Controls
+        const controls = document.createElement("div")
+        controls.style.cssText = `
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            margin-top: 32px;
+        `
+
+        // Create buttons with consistent styling
+        const createButton = (icon, onClick, title) => {
+            const button = document.createElement("button")
+            button.innerHTML = icon
+            button.onclick = onClick
+            button.title = title
+            button.style.cssText = `
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 12px;
+                color: var(--text-color);
+                opacity: 0.8;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `
+            button.addEventListener("mouseenter", () => {
+                button.style.opacity = "1"
+                button.style.transform = "scale(1.1)"
+            })
+            button.addEventListener("mouseleave", () => {
+                button.style.opacity = "0.8"
+                button.style.transform = "scale(1)"
+            })
+            return button
+        }
+
+        const startButton = createButton(playIcon, startPomodoro, "Start Timer")
+        const resetButton = createButton(resetIcon, resetPomodoro, "Reset Timer")
+        const settingsButton = createButton(settingsIcon, showPomodoroSettings, "Timer Settings")
+
+        controls.appendChild(resetButton)
+        controls.appendChild(startButton)
+        controls.appendChild(settingsButton)
+
+        // Assemble UI
+        timerContainer.appendChild(statusLabel)
+        timerContainer.appendChild(elements.pomodoroTimer)
+        timerContainer.appendChild(controls)
+
+        elements.pomodoroContainer.appendChild(header)
+        elements.pomodoroContainer.appendChild(timerContainer)
+
+        // Add to DOM
+        document.getElementById("app").appendChild(elements.pomodoroContainer)
+
+        // Store references
+        elements.pomodoroStatus = statusLabel
+        elements.pomodoroStartButton = startButton
+    }
+
+    function savePomodoroState() {
+        chrome.storage.sync.set({
+            pomodoroState: {
+                timeLeft: state.pomodoro.timeLeft,
+                workDuration: state.pomodoro.workDuration,
+                breakDuration: state.pomodoro.breakDuration,
+                isBreak: state.pomodoro.isBreak,
+                isRunning: state.pomodoro.isRunning,
+                lastStartTime: state.pomodoro.lastStartTime,
+                lastPauseTime: state.pomodoro.lastPauseTime
+            }
+        })
+    }
+
+    function showPomodoro() {
+        state.pomodoro.isVisible = true
+        
+        // Hide main content and FAB
+        const content = document.getElementById("content")
+        const addButton = document.getElementById("add-button")
+        const tabs = document.getElementById("tabs")
+        
+        content.style.opacity = "0"
+        addButton.style.display = "none"
+        tabs.style.opacity = "0"
+        
+        // Show pomodoro with animation
+        requestAnimationFrame(() => {
+            elements.pomodoroContainer.style.opacity = "1"
+            elements.pomodoroContainer.style.transform = "translateY(0)"
+        })
+    }
+
+    function hidePomodoro() {
+        state.pomodoro.isVisible = false
+        
+        // Hide pomodoro with animation
+        elements.pomodoroContainer.style.transform = "translateY(-100%)"
+        elements.pomodoroContainer.style.opacity = "0"
+        
+        // Show main content and FAB
+        const content = document.getElementById("content")
+        const addButton = document.getElementById("add-button")
+        const tabs = document.getElementById("tabs")
+        
+        content.style.opacity = "1"
+        addButton.style.display = "flex"
+        tabs.style.opacity = "1"
+    }
+
+    function startPomodoro() {
+        if (!state.pomodoro.isRunning) {
+            state.pomodoro.isRunning = true
+            state.pomodoro.lastStartTime = Date.now()
+            
+            elements.pomodoroStartButton.style.display = 'none' // Hide start button
+            elements.pomodoroTimer.style.opacity = '1'
+            
+            runTimer()
+            savePomodoroState()
+        }
+    }
+
+    function runTimer() {
+        const now = Date.now()
+        const elapsed = Math.floor((now - state.pomodoro.lastStartTime) / 1000)
+        const duration = state.pomodoro.isBreak ? 
+            state.pomodoro.breakDuration : 
+            state.pomodoro.workDuration
+        
+        state.pomodoro.timeLeft = Math.max(0, duration - elapsed)
+        elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+        
+        if (state.pomodoro.timeLeft > 0) {
+            savePomodoroState()
+            requestAnimationFrame(() => setTimeout(runTimer, 1000))
+        } else {
+            handleTimerComplete()
+        }
+    }
+
+    function handleTimerComplete() {
+        state.pomodoro.isRunning = false
+        state.pomodoro.isBreak = !state.pomodoro.isBreak
+        state.pomodoro.timeLeft = state.pomodoro.isBreak ? 
+            state.pomodoro.breakDuration : 
+            state.pomodoro.workDuration
+        
+        elements.pomodoroStartButton.style.display = 'block' // Show start button again
+        elements.pomodoroStatus.textContent = state.pomodoro.isBreak ? "Break" : "Focus"
+        elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+
+        playNotificationSound()
+        showTimerNotification(state.pomodoro.isBreak ? 
+            "Time for a break!" : 
+            "Break's over - back to work!")
+    }
+
+    function playNotificationSound() {
+        try {
+            const notification = new Audio(chrome.runtime.getURL('notification.mp3'))
+            notification.play().catch(error => {
+                console.log('Audio playback failed:', error)
+                // Fallback to system beep
+                new Audio('data:audio/wav;base64,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').play()
+            })
+        } catch (error) {
+            console.log('Audio creation failed:', error)
+        }
+    }
+
+    function showTimerNotification(message) {
+        // Browser notification
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icon128.png',
+            title: state.pomodoro.isBreak ? 'Break Time!' : 'Work Time!',
+            message,
+            requireInteraction: true, // Keep notification until user interacts
+            silent: false // Play system sound
+        })
+
+        // In-app notification
+        const notification = document.createElement("div")
+        notification.className = "timer-notification"
+        notification.textContent = message
+        notification.style.position = "fixed"
+        notification.style.bottom = "24px"
+        notification.style.left = "50%"
+        notification.style.transform = "translateX(-50%)"
+        notification.style.padding = "12px 24px"
+        notification.style.background = "var(--bg-color)"
+        notification.style.borderRadius = "8px"
+        notification.style.boxShadow = "0 4px 12px var(--shadow-color1)"
+        notification.style.fontSize = "14px"
+        notification.style.zIndex = "2000"
+        notification.style.opacity = "0"
+        notification.style.transition = "all 0.3s ease"
+
+        document.body.appendChild(notification)
+        
+        // Animate in
+        setTimeout(() => notification.style.opacity = "1", 100)
+        
+        // Remove after delay
+        setTimeout(() => {
+            notification.style.opacity = "0"
+            setTimeout(() => notification.remove(), 300)
+        }, 3000)
+    }
+
+    function showPomodoroSettings() {
+        const modal = document.createElement("div")
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -45%);
+            background: var(--bg-color);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+            width: 240px;
+            opacity: 0;
+            transition: all 0.2s ease;
+        `
+
+        const content = `
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; opacity: 0.8;">Focus Duration (min)</label>
+                <input type="number" id="work-duration" value="${state.pomodoro.workDuration / 60}" min="1" max="60" 
+                    style="width: 100%; padding: 8px; border: 1px solid var(--text-color); border-radius: 4px; background: none; color: var(--text-color);">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; opacity: 0.8;">Break Duration (min)</label>
+                <input type="number" id="break-duration" value="${state.pomodoro.breakDuration / 60}" min="1" max="30"
+                    style="width: 100%; padding: 8px; border: 1px solid var(--text-color); border-radius: 4px; background: none; color: var(--text-color);">
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button id="cancel-settings" style="padding: 8px 16px; background: none; border: none; cursor: pointer; opacity: 0.8; color: var(--text-color);">Cancel</button>
+                <button id="save-settings" style="padding: 8px 16px; background: var(--text-color); color: var(--bg-color); border: none; border-radius: 4px; cursor: pointer;">Save</button>
+            </div>
+        `
+
+        modal.innerHTML = content
+        document.body.appendChild(modal)
+
+        requestAnimationFrame(() => {
+            modal.style.opacity = "1"
+            modal.style.transform = "translate(-50%, -50%)"
+        })
+
+        // Simplified event handlers
+        document.getElementById('save-settings').onclick = () => {
+            const workDuration = Math.min(60, Math.max(1, parseInt(document.getElementById('work-duration').value))) * 60
+            const breakDuration = Math.min(30, Math.max(1, parseInt(document.getElementById('break-duration').value))) * 60
+
+            state.pomodoro.workDuration = workDuration
+            state.pomodoro.breakDuration = breakDuration
+            
+            // Reset timer if not running
+            if (!state.pomodoro.isRunning) {
+                state.pomodoro.timeLeft = state.pomodoro.isBreak ? breakDuration : workDuration
+                elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+            }
+
+            // Save less frequently to avoid quota issues
+            setTimeout(() => savePomodoroState(), 1000)
+            modal.remove()
+        }
+
+        document.getElementById('cancel-settings').onclick = () => modal.remove()
+    }
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
   
-      modalInput.addEventListener("focus", () => {
-        modalInput.style.boxShadow = "inset 3px 3px 7px var(--shadow-color1), inset -3px -3px 7px var(--shadow-color2)"
-      })
+    function addCompletedHistoryToggle() {
+        const toggle = document.createElement("button")
+        toggle.textContent = state.showCompletedHistory ? "Hide Completed History" : "Show Completed History"
+        toggle.style.fontSize = "12px"
+        toggle.style.padding = "4px 8px"
+        toggle.style.marginBottom = "8px"
+        toggle.style.opacity = "0.7"
+        toggle.style.background = "none"
+        toggle.style.border = "none"
+        toggle.style.cursor = "pointer"
+        toggle.style.color = "var(--text-color)"
+        toggle.style.transition = "all 0.2s ease"
+
+        toggle.addEventListener("mouseenter", () => toggle.style.opacity = "1")
+        toggle.addEventListener("mouseleave", () => toggle.style.opacity = "0.7")
+        toggle.onclick = () => {
+            state.showCompletedHistory = !state.showCompletedHistory
+            toggle.textContent = state.showCompletedHistory ? "Hide Completed History" : "Show Completed History"
+            renderItems()
+        }
+
+        elements.tasksList.parentElement.insertBefore(toggle, elements.tasksList)
+    }
   
-      noteInput.addEventListener("focus", () => {
-        noteInput.style.boxShadow = "inset 3px 3px 7px var(--shadow-color1), inset -3px -3px 7px var(--shadow-color2)"
-      })
-  
-      modalInput.addEventListener("blur", () => {
-        modalInput.style.boxShadow = "inset 2px 2px 5px var(--shadow-color1), inset -2px -2px 5px var(--shadow-color2)"
-      })
-  
-      noteInput.addEventListener("blur", () => {
-        noteInput.style.boxShadow = "inset 2px 2px 5px var(--shadow-color1), inset -2px -2px 5px var(--shadow-color2)"
-      })
+    function resetPomodoro() {
+        state.pomodoro.isRunning = false
+        state.pomodoro.isBreak = false
+        state.pomodoro.timeLeft = state.pomodoro.workDuration
+        state.pomodoro.lastStartTime = null
+        
+        elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)
+        elements.pomodoroStartButton.style.display = 'block'
+        elements.pomodoroStatus.textContent = "Focus"
+        
+        savePomodoroState()
     }
   
     init()
-    window.addEventListener("resize", setContentHeight)
   })
+  
+  
   
   

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Planner</title>
 </head>
-<body style="width: 360px; height: 600px; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px;">
-    <div id="app" style="height: 100%; display: flex; flex-direction: column; gap: 24px;">
+<body style="width: 360px; height: 600px; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px; position: relative; overflow: hidden;">
+    <div id="app" style="height: 100%; display: flex; flex-direction: column; gap: 24px; position: relative;">
         <!-- Theme Toggle and Date Header -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <button class="theme-toggle" id="theme-toggle" title="Toggles light & dark" aria-label="auto" aria-live="polite">
@@ -44,7 +44,7 @@
         </div>
 
         <!-- FAB -->
-        <button id="add-button" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: 56px; height: 56px; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; transition: all 0.3s ease;">+</button>
+        <button id="add-button">+</button>
     </div>
 
     <!-- Add/Edit Modal -->
@@ -280,6 +280,26 @@
         #content {
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
+        }
+
+        :root {
+            --work-color: #4CAF50;
+            --break-color: #2196F3;
+            --timer-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            background: var(--bg-color);
+            box-shadow: var(--timer-shadow);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
     </style>
     <script src="popup.js"></script>
