@@ -26,8 +26,9 @@ A high-fidelity Chrome extension for daily planning with a minimalist design app
 - Accessible via date header click
 - Clean, minimalist interface with large timer display
 - Default 30-minute work sessions
-- Persistent timer state across extension sessions
-- Visual and audio notifications
+- Reliable timer persistence across sessions
+- Accurate timing with drift compensation
+- Intelligent notification system
 - Smooth slide transitions
 - Simple controls (Start, Reset, Settings)
 - Automatic break/work cycle management
@@ -46,23 +47,39 @@ A high-fidelity Chrome extension for daily planning with a minimalist design app
 
 ## Technical Details
 - Built with vanilla JavaScript
+- Modular architecture with ES modules
+- Comprehensive error handling
+- Resource cleanup and management
 - Chrome Storage API for data persistence
 - Chrome Notifications API for reminders
 - State management and persistence
 - Error handling with fallbacks
 - No external dependencies
 
-## Recent Updates (v1.6.0)
-1. Redesigned Pomodoro timer with full-screen layout
-2. Improved task list spacing and readability
-3. Enhanced animations and transitions
-4. Better state persistence
-5. Simplified UI/UX flows
-6. Improved notifications system
-7. Cleaner monochromatic design
-8. Better error handling
-9. Enhanced settings modal
-10. Optimized storage usage
+## Recent Updates (v1.7.0)
+1. **Major Timer Improvements**
+   - Improved timer accuracy using performance.now()
+   - Better state management and persistence
+   - Fixed notification behavior
+   - Added proper cleanup functions
+
+2. **Code Quality**
+   - Implemented proper error handling
+   - Added resource cleanup
+   - Improved module organization
+   - Better DOM element handling
+
+3. **Performance**
+   - Optimized storage operations
+   - Improved animation performance
+   - Better state management
+   - Reduced unnecessary rerenders
+
+4. **User Experience**
+   - More reliable timer functionality
+   - Better error feedback
+   - Improved animations
+   - More consistent behavior
 
 ## Installation
 1. Download from Chrome Web Store
@@ -93,6 +110,14 @@ A high-fidelity Chrome extension for daily planning with a minimalist design app
 - Statistics dashboard
 
 ## Version History
+### 1.7.0
+- Improved timer accuracy and reliability
+- Better error handling and cleanup
+- Enhanced module organization
+- Fixed notification behavior
+- Optimized storage operations
+- Improved animation performance
+
 ### 1.5.0
 - Added Pomodoro timer with progress ring
 - Improved task and note layouts

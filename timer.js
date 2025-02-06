@@ -1,76 +1,109 @@
 import { pomodoroState } from './pomodoro.js'
 import { savePomodoroState } from './storage.js'
 import { playNotificationSound, showTimerNotification } from './notifications.js'
+import { formatTime, getElement, createPreciseTimer, tryCatch } from './utils.js'
+
+let stopTimer = null
 
 export function startPomodoro() {
     if (!pomodoroState.isRunning) {
+        const startButton = getElement('.pomodoro-start')
+        const timerDisplay = getElement('.pomodoro-timer')
+        if (!startButton || !timerDisplay) return
+
         pomodoroState.isRunning = true
-        pomodoroState.lastStartTime = Date.now()
+        pomodoroState.lastStartTime = performance.now()
         
-        document.querySelector('.pomodoro-start').style.display = 'none'
-        document.querySelector('.pomodoro-timer').style.opacity = '1'
+        startButton.style.display = 'none'
+        timerDisplay.style.opacity = '1'
         
-        runTimer()
+        // Use precise timer
+        stopTimer = createPreciseTimer(() => {
+            if (!runTimer()) {
+                stopTimer?.()
+            }
+        }, 1000)
+
         savePomodoroState()
     }
 }
 
-export function runTimer() {
-    const now = Date.now()
+function runTimer() {
+    const timerDisplay = getElement('.pomodoro-timer')
+    if (!timerDisplay) return false
+
+    const now = performance.now()
     const elapsed = Math.floor((now - pomodoroState.lastStartTime) / 1000)
     const duration = pomodoroState.isBreak ? 
         pomodoroState.breakDuration : 
         pomodoroState.workDuration
     
     pomodoroState.timeLeft = Math.max(0, duration - elapsed)
-    document.querySelector('.pomodoro-timer').textContent = formatTime(pomodoroState.timeLeft)
+    timerDisplay.textContent = formatTime(pomodoroState.timeLeft)
     
     if (pomodoroState.timeLeft > 0) {
         savePomodoroState()
-        requestAnimationFrame(() => setTimeout(runTimer, 1000))
+        return true
     } else {
         handleTimerComplete()
+        return false
     }
 }
 
 export function resetPomodoro() {
-    pomodoroState.isRunning = false
-    pomodoroState.isBreak = false
-    pomodoroState.timeLeft = pomodoroState.workDuration
-    pomodoroState.lastStartTime = null
+    stopTimer?.()
     
-    document.querySelector('.pomodoro-timer').textContent = formatTime(pomodoroState.timeLeft)
-    document.querySelector('.pomodoro-start').style.display = 'block'
-    document.querySelector('.pomodoro-status').textContent = "Focus"
-    
-    savePomodoroState()
+    tryCatch(() => {
+        const elements = {
+            timer: getElement('.pomodoro-timer'),
+            start: getElement('.pomodoro-start'),
+            status: getElement('.pomodoro-status')
+        }
+
+        if (!elements.timer || !elements.start || !elements.status) return
+
+        pomodoroState.isRunning = false
+        pomodoroState.isBreak = false
+        pomodoroState.timeLeft = pomodoroState.workDuration
+        pomodoroState.lastStartTime = null
+        
+        elements.timer.textContent = formatTime(pomodoroState.timeLeft)
+        elements.start.style.display = 'block'
+        elements.status.textContent = "Focus"
+        
+        savePomodoroState()
+    })
 }
 
 export function handleTimerComplete() {
-    // Only notify if timer was actively running (not on initialization)
-    const wasRunning = pomodoroState.isRunning
+    stopTimer?.()
     
-    pomodoroState.isRunning = false
-    pomodoroState.isBreak = !pomodoroState.isBreak
-    pomodoroState.timeLeft = pomodoroState.isBreak ? 
-        pomodoroState.breakDuration : 
-        pomodoroState.workDuration
-    
-    document.querySelector('.pomodoro-start').style.display = 'block'
-    document.querySelector('.pomodoro-status').textContent = pomodoroState.isBreak ? "Break" : "Focus"
-    document.querySelector('.pomodoro-timer').textContent = formatTime(pomodoroState.timeLeft)
+    tryCatch(() => {
+        const wasRunning = pomodoroState.isRunning
+        
+        pomodoroState.isRunning = false
+        pomodoroState.isBreak = !pomodoroState.isBreak
+        pomodoroState.timeLeft = pomodoroState.isBreak ? 
+            pomodoroState.breakDuration : 
+            pomodoroState.workDuration
+        
+        const elements = {
+            start: getElement('.pomodoro-start'),
+            status: getElement('.pomodoro-status'),
+            timer: getElement('.pomodoro-timer')
+        }
 
-    // Only show notifications if timer actually completed while running
-    if (wasRunning) {
-        playNotificationSound()
-        showTimerNotification(pomodoroState.isBreak ? 
-            "Time for a break!" : 
-            "Break's over - back to work!")
-    }
-}
+        if (!elements.start || !elements.status || !elements.timer) return
 
-export function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+        elements.start.style.display = 'block'
+        elements.status.textContent = pomodoroState.isBreak ? "Break" : "Focus"
+        elements.timer.textContent = formatTime(pomodoroState.timeLeft)
+
+        if (wasRunning) {
+            playNotificationSound()
+            showTimerNotification(pomodoroState.isBreak ? 
+                "Time for a break!" : 
+                "Break's over - back to work!")
+        }
+    })
 } 
