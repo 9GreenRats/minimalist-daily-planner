@@ -1,4 +1,9 @@
-document.addEventListener("DOMContentLoaded", () => {
+import { pomodoroState, initPomodoroTimer, showPomodoro, hidePomodoro } from './pomodoro.js'
+import { startPomodoro, resetPomodoro } from './timer.js'
+import { showPomodoroSettings } from './settings.js'
+import { loadPomodoroState } from './storage.js'
+
+document.addEventListener("DOMContentLoaded", async () => {
     const state = {
       tasks: [],
       notes: [],
@@ -829,7 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 
-                state.pomodoro = { ...state.pomodoro, ...savedState }
+                state.pomodoro = { ...state.pomoro, ...savedState }
                 
                 // Update UI
                 elements.pomodoroTimer.textContent = formatTime(state.pomodoro.timeLeft)

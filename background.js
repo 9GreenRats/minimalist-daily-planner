@@ -2,13 +2,14 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Minimalist Daily Planner installed');
 });
 
-// Set up alarms for daily notifications
+// Only create daily reminder alarm
 chrome.alarms.create('dailyReminder', {
   periodInMinutes: 1440 // 24 hours
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'dailyReminder') {
+    // Only show daily reminder notification
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icon128.png',
