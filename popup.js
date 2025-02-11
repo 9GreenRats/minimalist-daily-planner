@@ -393,43 +393,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       contentSection.style.marginTop = "8px"
       const previewText = lines.slice(1).join("\n")
       
-      if (previewText) {
-          const content = document.createElement("div")
-          content.textContent = previewText
-          content.style.fontSize = "13px"
-          content.style.color = "var(--text-color)"
-          content.style.opacity = "0.85"
-          content.style.lineHeight = "1.5"
-          content.style.whiteSpace = "pre-wrap"
-          content.style.wordBreak = "break-word"
-          content.style.borderTop = "1px solid rgba(var(--text-color-rgb), 0.1)"
-          content.style.paddingTop = "8px"
-          content.style.marginTop = "4px"
+      const content = document.createElement("div")
+      content.textContent = previewText || "No content" // Add fallback text
+      content.style.fontSize = "13px"
+      content.style.color = "var(--text-color)"
+      content.style.opacity = previewText ? "0.85" : "0.5" // Dim empty content
+      content.style.lineHeight = "1.5"
+      content.style.whiteSpace = "pre-wrap"
+      content.style.wordBreak = "break-word"
+      content.style.borderTop = "1px solid rgba(var(--text-color-rgb), 0.1)"
+      content.style.paddingTop = "8px"
+      content.style.marginTop = "4px"
+      
+      contentSection.appendChild(content)
+  
+      // Assemble the layout
+      titleSection.appendChild(title)
+      titleSection.appendChild(indicator)
+  
+      metaSection.appendChild(dateLabel)
+      metaSection.appendChild(actions)
+  
+      header.appendChild(titleSection)
+      header.appendChild(metaSection)
+  
+      li.appendChild(header)
+      li.appendChild(contentSection)
+  
+      // Click handler for expand/collapse
+      li.addEventListener("click", (e) => {
+          if (e.target.closest("button")) return
           
-          contentSection.appendChild(content)
-  
-          // Assemble the layout
-          titleSection.appendChild(title)
-          titleSection.appendChild(indicator)
-  
-          metaSection.appendChild(dateLabel)
-          metaSection.appendChild(actions)
-  
-          header.appendChild(titleSection)
-          header.appendChild(metaSection)
-  
-          li.appendChild(header)
-          li.appendChild(contentSection)
-  
-          // Click handler for expand/collapse
-          li.addEventListener("click", (e) => {
-              if (e.target.closest("button")) return
-              
-              const isVisible = contentSection.style.display === "block"
-              contentSection.style.display = isVisible ? "none" : "block"
-              indicator.style.transform = isVisible ? "rotate(-90deg)" : "rotate(0deg)"
-          })
-      }
+          const isVisible = contentSection.style.display === "block"
+          contentSection.style.display = isVisible ? "none" : "block"
+          indicator.style.transform = isVisible ? "rotate(-90deg)" : "rotate(0deg)"
+      })
   
       // Hover effects
       li.addEventListener("mouseenter", () => {
